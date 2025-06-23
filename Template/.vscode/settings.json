@@ -1,0 +1,9 @@
+{
+    "files.associations": {
+        "*.embeddedhtml": "html",
+        "callbacks.h": "c",
+        "pspkernel.h": "c",
+        "gu2gl.h": "c",
+        "stb_image.h": "c"
+    }
+}
