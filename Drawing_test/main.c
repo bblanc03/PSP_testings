@@ -4,8 +4,8 @@
 #include <pspdisplay.h>
 #include <pspgu.h>
 #include <pspgum.h>
+#include <pspdebug.h>
 #include <pspkernel.h>
-
 
 // PSP Module Info
 PSP_MODULE_INFO("context", 0, 1, 1);
@@ -168,45 +168,41 @@ struct Vertex
 ///
 struct Vertex __attribute__((aligned(16))) triangle[3] = {
     //[x] = number of traingles
-    {0xFF0000FF, 0.35f, 0.0f, -1.0f}, // 1
+    {0xFF0000FF, 0.35f, 0.0f, -1.0f},  // 1
     {0xFF00FF00, -0.35f, 0.0f, -1.0f}, // 2
-    {0XFFFF0000, 0.0f, 0.5f, -1.0f}, // 3
+    {0XFFFF0000, 0.0f, 0.5f, -1.0f},   // 3
 };
-
-
 
 struct Vertex __attribute__((aligned(16))) square[6] = {
     {0xFF0000FF, -0.25f, -0.25f, -1.0f}, // 0
     {0xFF0000FF, -0.25f, 0.25f, -1.0f},  // 1
     {0xFF00FF00, 0.25f, 0.25f, -1.0f},   // 2
     {0xFF00FF00, 0.25f, 0.25f, -1.0f},   // 2
-    {0xFFFF0000, 0.25f, -0.25f, -1.0f}, // 3
+    {0xFFFF0000, 0.25f, -0.25f, -1.0f},  // 3
     {0xFF0000FF, -0.25f, -0.25f, -1.0f}, // 0
 };
 
-//we use aligned(16) to limit the vertex to onl take 16 bites since the bites or each vertex is 16 (hexcode = 4, floats = 4)
-struct Vertex __attribute__((aligned(16))) square_indexed[4] = { // this is like maillage from school. Probably gonna use this version the most
+// we use aligned(16) to limit the vertex to onl take 16 bites since the bites or each vertex is 16 (hexcode = 4, floats = 4)
+struct Vertex __attribute__((aligned(16))) square_indexed[4] = {
+    // this is like maillage from school. Probably gonna use this version the most
     {0xFF0000FF, -0.25f, -0.25f, -1.0f}, // 0
     {0xFF0000FF, -0.25f, 0.25f, -1.0f},  // 1
     {0xFF00FF00, 0.25f, 0.25f, -1.0f},   // 2
-    {0xFFFF0000, 0.25f, -0.25f, -1.0f}, // 3
+    {0xFFFF0000, 0.25f, -0.25f, -1.0f},  // 3
 };
 
 unsigned short __attribute__((aligned(16))) square_indices[6] = { // table to tell the order of wich to link the vertices
-    0, 1, 2, 2, 3, 0
-};
+    0, 1, 2, 2, 3, 0};
 
 unsigned short __attribute__((aligned(16))) triangle_indices[3] = {
-    0, 1, 2
-};
+    0, 1, 2};
 
-struct Vertex* vertex_lists[2] = {triangle, square_indexed};
-short* indices_list[2] = {triangle_indices, square_indices};
+struct Vertex *vertex_lists[2] = {triangle, square_indexed};
+short *indices_list[2] = {triangle_indices, square_indices};
 int vertex_count[2] = {3, 6};
 
 int main()
 {
- 
 
     // Boillerplate
     setup_callbacks(); // home button functionnality
@@ -237,14 +233,23 @@ int main()
         sceGuClearColor(0xFF000000);
         sceGuClear(GU_COLOR_BUFFER_BIT | GU_DEPTH_BUFFER_BIT);
 
-        reset_translate(-0.5f, 0.0f, 0.0f);
-        sceGumDrawArray(GU_TRIANGLES, GU_INDEX_16BIT | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_3D, 3, triangle_indices, triangle);
-
         reset_translate(0.5f, 0.25f, 0.0f);
         sceGumDrawArray(GU_TRIANGLES, GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_3D, 6, NULL, square);
 
-        reset_translate(0.0f, -0.5f, 0.0f);
-        sceGumDrawArray(GU_TRIANGLES, GU_INDEX_16BIT | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_3D, 6, square_indices, square_indexed);
+        
+        for (int i = 0; i < sizeof(vertex_lists)/ sizeof(vertex_lists[0]); i++)
+        {
+            if (i != 0)
+            {
+                reset_translate(-0.5f, 0.0f, 0.0f);
+                sceGumDrawArray(GU_TRIANGLES, GU_INDEX_16BIT | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_3D, vertex_count[i], indices_list[i], vertex_lists[i]);
+            }
+            else
+            {
+                reset_translate(0.0f, -0.5f, 0.0f);
+                sceGumDrawArray(GU_TRIANGLES, GU_INDEX_16BIT | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_3D, vertex_count[i], indices_list[i], vertex_lists[i]);
+            }
+        }
 
         endFrame();
     }
