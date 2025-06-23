@@ -5,7 +5,9 @@
             "includePath": [
                 "${default}",
                 "C:/Users/bblan/pspdev/psp/sdk/include",
-                "C:/Users/bblan/pspdev/psp/sdk/samples/gu/common/"
+                "C:/Users/bblan/pspdev/psp/sdk/samples/gu/common/",
+                "C:/Users/Brandon/pspdev/psp/sdk/include",
+                "C:/Users/Brandon/pspdev/psp/sdk/samples/gu/common/"
             ],
             "defines": [
                 "_DEBUG",
