@@ -308,7 +308,7 @@ int main()
     sceGumMatrixMode(GU_MODEL); // positions of current model
     sceGumLoadIdentity();
 
-    Texture* texture = load_texture("img/container.jpg", GU_TRUE); // load the texture from the file
+    Texture* texture = load_texture("container.jpg", GU_TRUE); // load the texture from the file
     if(!texture){
         goto cleanup; // if the texture failed to load, exit
     }
@@ -320,7 +320,7 @@ int main()
         startFrame();
 
         sceGuDisable(GU_DEPTH_TEST);
-        sceGuDisable(GU_TEXTURE_2D);
+        //sceGuDisable(GU_TEXTURE_2D);
 
         sceGuClearColor(0xFF000000);
         sceGuClear(GU_COLOR_BUFFER_BIT | GU_DEPTH_BUFFER_BIT);

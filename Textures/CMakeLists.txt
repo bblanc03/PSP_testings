@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.11)
 
-project(Drawing_test)
+project(Texture_test)
 
 add_executable(${PROJECT_NAME} Textures.c)
 
