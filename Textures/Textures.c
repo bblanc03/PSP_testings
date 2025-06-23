@@ -10,6 +10,10 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
+#include <string.h>
+#include <malloc.h>
+#include <stdio.h>
+
 // PSP Module Info
 PSP_MODULE_INFO("context", 0, 1, 1);
 PSP_MAIN_THREAD_ATTR(THREAD_ATTR_USER | THREAD_ATTR_VFPU);
@@ -178,29 +182,23 @@ struct Vertex __attribute__((aligned(16))) square_indexed[4] = {
 unsigned short __attribute__((aligned(16))) square_indices[6] = { // table to tell the order of wich to link the vertices
     0, 1, 2, 2, 3, 0};
 
-unsigned int pow2(const unsigned int value)
-{
+unsigned int pow2(const unsigned int value) {
     unsigned int poweroftwo = 1;
-    while (poweroftwo < value)
-    {
-        poweroftwo <<= 1; // left shift by 1, equivalent to multiplying by 2
+    while (poweroftwo < value) {
+        poweroftwo <<= 1;
     }
     return poweroftwo;
 }
 
-void copy_texture_data(void *dest, const void *src, unsigned int pW, unsigned int width, unsigned int hight)
-{
-    for (unsigned int y = 0; y < hight; y++)
-    {
-        for (unsigned int x = 0; x < width; x++)
-        {
-            ((unsigned int *)dest)[x + y * pW] = ((unsigned int *)src)[x + y * width];
+void copy_texture_data(void* dest, const void* src, const int pW, const int width, const int height){
+    for (unsigned int y = 0; y < height; y++) {
+        for (unsigned int x = 0; x < width; x++) {
+            ((unsigned int*)dest)[x + y * pW] = ((unsigned int *)src)[x + y * width];
         }
     }
 }
 
-void swizzle_fast(unsigned char *out, const unsigned char *in, const unsigned int width, const unsigned int height)
-{
+void swizzle_fast(u8 *out, const u8 *in, const unsigned int width, const unsigned int height) {
     unsigned int blockx, blocky;
     unsigned int j;
 
@@ -210,21 +208,19 @@ void swizzle_fast(unsigned char *out, const unsigned char *in, const unsigned in
     unsigned int src_pitch = (width - 16) / 4;
     unsigned int src_row = width * 8;
 
-    const unsigned char *ysrc = in;
-    unsigned int *dest = (unsigned int*)out;
+    const u8 *ysrc = in;
+    u32 *dst = (u32 *)out;
 
-    for(blocky = 0; blocky < height_blocks; blocky++)
-    {
-        const unsigned char *xsrc = ysrc;
-        for(blockx = 0; blockx < width_blocks; blockx++)
-        {
-            const unsigned int *src = (unsigned int*)xsrc;
-            for(j = 0; j < 8; j++)
-            {
-                *(dest++) = *(src++);
-                *(dest++) = *(src++);
-                *(dest++) = *(src++);
-                *(dest++) = *(src++);
+    for (blocky = 0; blocky < height_blocks; ++blocky) {
+        const u8 *xsrc = ysrc;
+        for (blockx = 0; blockx < width_blocks; ++blockx) {
+            const u32 *src = (u32 *)xsrc;
+            for (j = 0; j < 8; ++j) {
+                *(dst++) = *(src++);
+                *(dst++) = *(src++);
+                *(dst++) = *(src++);
+                *(dst++) = *(src++);
+                src += src_pitch;
             }
             xsrc += 16;
         }
@@ -232,73 +228,64 @@ void swizzle_fast(unsigned char *out, const unsigned char *in, const unsigned in
     }
 }
 
-tydef struct {
+typedef struct {
     unsigned int width;
     unsigned int height;
     unsigned int pW, pH;
-    unsigned char *data; // pointer to the data
-}
+    void *data; // pointer to the data
+}Texture;
 
-Texture* load_texture(const char *filename, const int flip, const int vram)
-{
-    int width, height, crChannels;
-    stbi_set_flip_vertically_on_load(flip);
-
-    unsigned char *data = stbi_load(filename, &width, &height, &crChannels, STBI_rgb_alpha); // load the image with 4 channels (RGBA)
+Texture* load_texture(const char* filename, const int vram) {
+    int width, height, nrChannels;    
+    stbi_set_flip_vertically_on_load(GU_TRUE);
+    unsigned char *data = stbi_load(filename, &width, &height,
+                                    &nrChannels, STBI_rgb_alpha);
 
     if(!data)
-    {
-        pspDebugScreenPrintf("Failed to load texture: %s\n", filename);
         return NULL;
-    }
 
     Texture* tex = (Texture*)malloc(sizeof(Texture));
-    //FIXME: check if malloc failed
     tex->width = width;
     tex->height = height;
     tex->pW = pow2(width);
     tex->pH = pow2(height);
 
-    size_t size = tex->pH * tex->pW * 4; // 4 bytes per pixel for RGBA
+    unsigned int *dataBuffer =
+        (unsigned int *)memalign(16, tex->pH * tex->pW * 4);
 
-    unsigned int* dataBuffer = (unsigned int*)memalign(16, size);
-    //FIXME: check if memalign failed
-
+    // Copy to Data Buffer
     copy_texture_data(dataBuffer, data, tex->pW, tex->width, tex->height);
+
+    // Free STB Data
     stbi_image_free(data);
 
     unsigned int* swizzled_pixels = NULL;
-
-    if (vram)
-    {
-        swizzled_pixels = (unsigned int*)getStaticVramTexture(tex->pW, tex->pH, GU_PSM_8888);
+    size_t size = tex->pH * tex->pW * 4;
+    if(vram){
+        swizzled_pixels = getStaticVramTexture(tex->pW, tex->pH, GU_PSM_8888);
     } else {
-        swizzled_pixels = (unsigned int*)memalign(16, size);
-        //FIXME: allocation can fail
+        swizzled_pixels = (unsigned int *)memalign(16, size);
     }
-
-    swizzle_fast((unsigned char*)swizzled_pixels, (const unsigned char*)dataBuffer, tex->pW * 4, tex->pH);
-
-    tex->date = swizzled_pixels;
-    free(dataBuffer);
     
-    sceKernelDcacheWritebackInvalidateAll(); // write back the cache to make sure the data is in memory
+    swizzle_fast((u8*)swizzled_pixels, (const u8*)dataBuffer, tex->pW * 4, tex->pH);
+
+    free(dataBuffer);
+    tex->data = swizzled_pixels;
+
+    sceKernelDcacheWritebackInvalidateAll();
+
     return tex;
 }
 
-void bind_texture(Texture *tex)
-{
-    if (!tex)
-    {
-        pspDebugScreenPrintf("Texture is NULL\n");
+void bind_texture(Texture* tex) {
+    if(tex == NULL)
         return;
-    }
 
     sceGuTexMode(GU_PSM_8888, 0, 0, 1);
-    sceGuTexFunc(GU_TFX_MODULATE, GU_TCC_RGBA); // output_color = vertex_color * texture_color
+    sceGuTexFunc(GU_TFX_MODULATE, GU_TCC_RGBA);
     sceGuTexFilter(GU_NEAREST, GU_NEAREST);
     sceGuTexWrap(GU_REPEAT, GU_REPEAT);
-    sceGuTexImage(0, tex->pW, tex->pH, tex->pW, tex->data); // sets the texture in the graphics engine
+    sceGuTexImage(0, tex->pW, tex->pH, tex->pW, tex->data);
 }
 
 int main()
@@ -344,6 +331,8 @@ int main()
 
         endFrame();
     }
+
+    cleanup:
 
     termGraphics();
 

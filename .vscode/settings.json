@@ -3,6 +3,9 @@
         "*.embeddedhtml": "html",
         "list": "c",
         "pspkernel.h": "c",
-        "pspgum.h": "c"
+        "pspgum.h": "c",
+        "string.h": "c",
+        "stb_image.h": "c",
+        "stdio.h": "c"
     }
 }
