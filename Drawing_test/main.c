@@ -6,6 +6,7 @@
 #include <pspgum.h>
 #include <pspkernel.h>
 
+
 // PSP Module Info
 PSP_MODULE_INFO("context", 0, 1, 1);
 PSP_MAIN_THREAD_ATTR(THREAD_ATTR_USER | THREAD_ATTR_VFPU);
@@ -167,10 +168,12 @@ struct Vertex
 ///
 struct Vertex __attribute__((aligned(16))) triangle[3] = {
     //[x] = number of traingles
-    {0xFF0000FF, 0.35f, 0.0f, -1.0f},
-    {0xFF00FF00, -0.35f, 0.0f, -1.0f},
-    {0XFFFF0000, 0.0f, 0.5f, -1.0f},
+    {0xFF0000FF, 0.35f, 0.0f, -1.0f}, // 1
+    {0xFF00FF00, -0.35f, 0.0f, -1.0f}, // 2
+    {0XFFFF0000, 0.0f, 0.5f, -1.0f}, // 3
 };
+
+
 
 struct Vertex __attribute__((aligned(16))) square[6] = {
     {0xFF0000FF, -0.25f, -0.25f, -1.0f}, // 0
@@ -193,8 +196,18 @@ unsigned short __attribute__((aligned(16))) square_indices[6] = { // table to te
     0, 1, 2, 2, 3, 0
 };
 
+unsigned short __attribute__((aligned(16))) triangle_indices[3] = {
+    0, 1, 2
+};
+
+struct Vertex* vertex_lists[2] = {triangle, square_indexed};
+short* indices_list[2] = {triangle_indices, square_indices};
+int vertex_count[2] = {3, 6};
+
 int main()
 {
+ 
+
     // Boillerplate
     setup_callbacks(); // home button functionnality
 
@@ -225,7 +238,7 @@ int main()
         sceGuClear(GU_COLOR_BUFFER_BIT | GU_DEPTH_BUFFER_BIT);
 
         reset_translate(-0.5f, 0.0f, 0.0f);
-        sceGumDrawArray(GU_TRIANGLES, GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_3D, 3, NULL, triangle);
+        sceGumDrawArray(GU_TRIANGLES, GU_INDEX_16BIT | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_3D, 3, triangle_indices, triangle);
 
         reset_translate(0.5f, 0.25f, 0.0f);
         sceGumDrawArray(GU_TRIANGLES, GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_3D, 6, NULL, square);
