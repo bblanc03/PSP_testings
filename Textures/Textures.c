@@ -7,6 +7,9 @@
 #include <pspdebug.h>
 #include <pspkernel.h>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
 // PSP Module Info
 PSP_MODULE_INFO("context", 0, 1, 1);
 PSP_MAIN_THREAD_ATTR(THREAD_ATTR_USER | THREAD_ATTR_VFPU);
@@ -158,48 +161,145 @@ void reset_translate(float x, float y, float z) // in 2d it resets the position 
 
 struct Vertex
 {
+    float u, v; // texture coordinates, not used in this example
     unsigned int color;
     float x, y, z;
-};
-
-///      2
-///
-///  1 <==== 0
-///
-struct Vertex __attribute__((aligned(16))) triangle[3] = {
-    //[x] = number of traingles
-    {0xFF0000FF, 0.35f, 0.0f, -1.0f},  // 1
-    {0xFF00FF00, -0.35f, 0.0f, -1.0f}, // 2
-    {0XFFFF0000, 0.0f, 0.5f, -1.0f},   // 3
-};
-
-struct Vertex __attribute__((aligned(16))) square[6] = {
-    {0xFF0000FF, -0.25f, -0.25f, -1.0f}, // 0
-    {0xFF0000FF, -0.25f, 0.25f, -1.0f},  // 1
-    {0xFF00FF00, 0.25f, 0.25f, -1.0f},   // 2
-    {0xFF00FF00, 0.25f, 0.25f, -1.0f},   // 2
-    {0xFFFF0000, 0.25f, -0.25f, -1.0f},  // 3
-    {0xFF0000FF, -0.25f, -0.25f, -1.0f}, // 0
 };
 
 // we use aligned(16) to limit the vertex to onl take 16 bites since the bites or each vertex is 16 (hexcode = 4, floats = 4)
 struct Vertex __attribute__((aligned(16))) square_indexed[4] = {
     // this is like maillage from school. Probably gonna use this version the most
-    {0xFF0000FF, -0.25f, -0.25f, -1.0f}, // 0
-    {0xFF0000FF, -0.25f, 0.25f, -1.0f},  // 1
-    {0xFF00FF00, 0.25f, 0.25f, -1.0f},   // 2
-    {0xFFFF0000, 0.25f, -0.25f, -1.0f},  // 3
+    {0.0f, 0.0f, 0xFF0000FF, -0.25f, -0.25f, -1.0f}, // 0
+    {0.0f, 1.0f, 0xFF0000FF, -0.25f, 0.25f, -1.0f},  // 1
+    {1.0f, 1.0f, 0xFF00FF00, 0.25f, 0.25f, -1.0f},   // 2
+    {1.0f, 0.0f, 0xFFFF0000, 0.25f, -0.25f, -1.0f},  // 3
 };
 
 unsigned short __attribute__((aligned(16))) square_indices[6] = { // table to tell the order of wich to link the vertices
     0, 1, 2, 2, 3, 0};
 
-unsigned short __attribute__((aligned(16))) triangle_indices[3] = {
-    0, 1, 2};
+unsigned int pow2(const unsigned int value)
+{
+    unsigned int poweroftwo = 1;
+    while (poweroftwo < value)
+    {
+        poweroftwo <<= 1; // left shift by 1, equivalent to multiplying by 2
+    }
+    return poweroftwo;
+}
 
-struct Vertex *vertex_lists[2] = {triangle, square_indexed};
-short *indices_list[2] = {triangle_indices, square_indices};
-int vertex_count[2] = {3, 6};
+void copy_texture_data(void *dest, const void *src, unsigned int pW, unsigned int width, unsigned int hight)
+{
+    for (unsigned int y = 0; y < hight; y++)
+    {
+        for (unsigned int x = 0; x < width; x++)
+        {
+            ((unsigned int *)dest)[x + y * pW] = ((unsigned int *)src)[x + y * width];
+        }
+    }
+}
+
+void swizzle_fast(unsigned char *out, const unsigned char *in, const unsigned int width, const unsigned int height)
+{
+    unsigned int blockx, blocky;
+    unsigned int j;
+
+    unsigned int width_blocks = (width / 16);
+    unsigned int height_blocks = (height / 8);
+
+    unsigned int src_pitch = (width - 16) / 4;
+    unsigned int src_row = width * 8;
+
+    const unsigned char *ysrc = in;
+    unsigned int *dest = (unsigned int*)out;
+
+    for(blocky = 0; blocky < height_blocks; blocky++)
+    {
+        const unsigned char *xsrc = ysrc;
+        for(blockx = 0; blockx < width_blocks; blockx++)
+        {
+            const unsigned int *src = (unsigned int*)xsrc;
+            for(j = 0; j < 8; j++)
+            {
+                *(dest++) = *(src++);
+                *(dest++) = *(src++);
+                *(dest++) = *(src++);
+                *(dest++) = *(src++);
+            }
+            xsrc += 16;
+        }
+        ysrc += src_row;
+    }
+}
+
+tydef struct {
+    unsigned int width;
+    unsigned int height;
+    unsigned int pW, pH;
+    unsigned char *data; // pointer to the data
+}
+
+Texture* load_texture(const char *filename, const int flip, const int vram)
+{
+    int width, height, crChannels;
+    stbi_set_flip_vertically_on_load(flip);
+
+    unsigned char *data = stbi_load(filename, &width, &height, &crChannels, STBI_rgb_alpha); // load the image with 4 channels (RGBA)
+
+    if(!data)
+    {
+        pspDebugScreenPrintf("Failed to load texture: %s\n", filename);
+        return NULL;
+    }
+
+    Texture* tex = (Texture*)malloc(sizeof(Texture));
+    //FIXME: check if malloc failed
+    tex->width = width;
+    tex->height = height;
+    tex->pW = pow2(width);
+    tex->pH = pow2(height);
+
+    size_t size = tex->pH * tex->pW * 4; // 4 bytes per pixel for RGBA
+
+    unsigned int* dataBuffer = (unsigned int*)memalign(16, size);
+    //FIXME: check if memalign failed
+
+    copy_texture_data(dataBuffer, data, tex->pW, tex->width, tex->height);
+    stbi_image_free(data);
+
+    unsigned int* swizzled_pixels = NULL;
+
+    if (vram)
+    {
+        swizzled_pixels = (unsigned int*)getStaticVramTexture(tex->pW, tex->pH, GU_PSM_8888);
+    } else {
+        swizzled_pixels = (unsigned int*)memalign(16, size);
+        //FIXME: allocation can fail
+    }
+
+    swizzle_fast((unsigned char*)swizzled_pixels, (const unsigned char*)dataBuffer, tex->pW * 4, tex->pH);
+
+    tex->date = swizzled_pixels;
+    free(dataBuffer);
+    
+    sceKernelDcacheWritebackInvalidateAll(); // write back the cache to make sure the data is in memory
+    return tex;
+}
+
+void bind_texture(Texture *tex)
+{
+    if (!tex)
+    {
+        pspDebugScreenPrintf("Texture is NULL\n");
+        return;
+    }
+
+    sceGuTexMode(GU_PSM_8888, 0, 0, 1);
+    sceGuTexFunc(GU_TFX_MODULATE, GU_TCC_RGBA); // output_color = vertex_color * texture_color
+    sceGuTexFilter(GU_NEAREST, GU_NEAREST);
+    sceGuTexWrap(GU_REPEAT, GU_REPEAT);
+    sceGuTexImage(0, tex->pW, tex->pH, tex->pW, tex->data); // sets the texture in the graphics engine
+}
 
 int main()
 {
@@ -221,6 +321,11 @@ int main()
     sceGumMatrixMode(GU_MODEL); // positions of current model
     sceGumLoadIdentity();
 
+    Texture* texture = load_texture("img/container.jpg", GU_TRUE); // load the texture from the file
+    if(!texture){
+        goto cleanup; // if the texture failed to load, exit
+    }
+
     // Main program loop
     while (running)
     {
@@ -234,22 +339,8 @@ int main()
         sceGuClear(GU_COLOR_BUFFER_BIT | GU_DEPTH_BUFFER_BIT);
 
         reset_translate(0.5f, 0.25f, 0.0f);
-        sceGumDrawArray(GU_TRIANGLES, GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_3D, 6, NULL, square);
-
-        
-        for (int i = 0; i < sizeof(vertex_lists)/ sizeof(vertex_lists[0]); i++)
-        {
-            if (i != 0)
-            {
-                reset_translate(-0.5f, 0.0f, 0.0f);
-                sceGumDrawArray(GU_TRIANGLES, GU_INDEX_16BIT | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_3D, vertex_count[i], indices_list[i], vertex_lists[i]);
-            }
-            else
-            {
-                reset_translate(0.0f, -0.5f, 0.0f);
-                sceGumDrawArray(GU_TRIANGLES, GU_INDEX_16BIT | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_3D, vertex_count[i], indices_list[i], vertex_lists[i]);
-            }
-        }
+        bind_texture(texture); // bind the texture to the graphics engine
+        sceGumDrawArray(GU_TRIANGLES, GU_INDEX_16BIT | GU_TEXTURE_32BITF | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_3D, 6, square_indices, square_indexed);
 
         endFrame();
     }
