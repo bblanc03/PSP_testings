@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.11)
 
-project(Texture_test)
+project(LoadRunner)
 
-add_executable(${PROJECT_NAME} Textures.c)
+add_executable(${PROJECT_NAME} context.c)
 
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
