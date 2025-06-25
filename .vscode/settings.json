@@ -6,6 +6,7 @@
         "pspgum.h": "c",
         "string.h": "c",
         "stb_image.h": "c",
-        "stdio.h": "c"
+        "stdio.h": "c",
+        "table.h": "c"
     }
 }

@@ -1,3 +1,4 @@
+#include "headers/table.h"
 unsigned int table[17][28] = {
     {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
     {1, 1, 1, 1, 5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
@@ -22,3 +23,8 @@ unsigned int table[17][28] = {
 // 4 = passrelle
 // 5 = gold
 // 6 = grey
+
+int getTabel(){
+
+    return table;
+}
