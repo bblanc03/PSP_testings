@@ -2,5 +2,5 @@
 #define TABLE_INCLUDE
 
 /* Your function statement here */
-int getTabel();
+unsigned int (*getTable(void))[28];
 #endif
