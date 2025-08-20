@@ -202,11 +202,11 @@ void create_squares() // this should fill up the list backwards
     for (unsigned int y = 0; y < 17; y++)
     {
         for (unsigned int x = 0; x < 28; x++)
-        {
-            all_squares[square_count][0] = (struct Vertex){0xFF0000FF, (0.0f) + (16.0f / 9.0f) * x, (0.0f) + (1.0f / 27.0f) * y, -1.0f};
-            all_squares[square_count][1] = (struct Vertex){0xFF0000FF, (0.0f) + (16.0f / 9.0f) * x, (1.0f / 27.0f) + (1.0f / 27.0f) * y, -1.0f};
-            all_squares[square_count][2] = (struct Vertex){0xFF00FF00, (16.0f / 9.0f) + (16.0f / 9.0f) * x, (1.0f / 27.0f) + (1.0f / 27.0f) * y, -1.0f};
-            all_squares[square_count][3] = (struct Vertex){0xFF00FF00, (16.0f / 9.0f) + (16.0f / 9.0f) * x, 0.0f + (1.0f / 27.0f) * y, -1.0f};
+        { // counter clockwise construction
+            all_squares[square_count][0] = (struct Vertex){0xFF0000FF, (0.0f) + (1.0f / 16.0f) * x, (0.0f) + (1.0f / 27.0f) * y, -1.0f};
+            all_squares[square_count][1] = (struct Vertex){0xFF0000FF, (0.0f) + (1.0f / 16.0f) * x, (1.0f / 27.0f) + (1.0f / 27.0f) * y, -1.0f};
+            all_squares[square_count][2] = (struct Vertex){0xFF00FF00, (1.0f / 16.0f) + (1.0f / 16.0f) * x, (1.0f / 27.0f) + (1.0f / 27.0f) * y, -1.0f};
+            all_squares[square_count][3] = (struct Vertex){0xFF00FF00, (1.0f / 16.0f) + (1.0f / 16.0f) * x, 0.0f + (1.0f / 27.0f) * y, -1.0f};
             square_count++;
         }
     }
