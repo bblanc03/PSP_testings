@@ -190,11 +190,35 @@ unsigned short __attribute__((aligned(16))) square_indices[6] = { // table to te
 // short *indices_list[2] = {triangle_indices, square_indices};
 // int vertex_count[2] = {3, 6};
 
-
 #define NUM_SQUARES (17 * 28)
 struct Vertex all_squares[NUM_SQUARES][4];
 int square_count = 0;
 // unsigned int (*tab)[28] = NULL;
+
+// table
+static unsigned int table[17][28] = {{6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6},
+                                     {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
+                                     {1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 5, 1, 1, 1, 1, 1, 1, 1, 1, 3},
+                                     {1, 1, 1, 1, 3, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 3},
+                                     {1, 1, 1, 1, 1, 1, 1, 5, 1, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 3, 1, 1, 1, 5, 1, 1, 1},
+                                     {1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1},
+                                     {2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 1, 1, 1, 1, 1, 1, 1},
+                                     {1, 1, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1},
+                                     {1, 1, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1},
+                                     {2, 2, 3, 2, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2},
+                                     {1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 2, 2, 3, 1, 1, 1, 1, 1, 1, 1, 5, 1, 1, 3, 1, 1},
+                                     {1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 2, 2, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1},
+                                     {1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 2, 2, 3, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 3, 1, 1},
+                                     {1, 1, 1, 1, 1, 1, 1, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 1, 1, 1, 1, 1, 5, 1, 1, 1, 1},
+                                     {2, 2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+                                     {1, 1, 1, 1, 5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+                                     {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}};
+// 1 = black
+// 2 = red
+// 3 = ladder
+// 4 = passrelle
+// 5 = gold
+// 6 = grey
 
 void create_squares() // this should fill up the list backwards
 {
@@ -203,10 +227,34 @@ void create_squares() // this should fill up the list backwards
     {
         for (unsigned int x = 0; x < 28; x++)
         { // counter clockwise construction
-            all_squares[square_count][0] = (struct Vertex){0xFF0000FF, (0.0f) + (1.0f / 16.0f) * x, (0.0f) + (1.0f / 27.0f) * y, -1.0f};
-            all_squares[square_count][1] = (struct Vertex){0xFF0000FF, (0.0f) + (1.0f / 16.0f) * x, (1.0f / 27.0f) + (1.0f / 27.0f) * y, -1.0f};
-            all_squares[square_count][2] = (struct Vertex){0xFF00FF00, (1.0f / 16.0f) + (1.0f / 16.0f) * x, (1.0f / 27.0f) + (1.0f / 27.0f) * y, -1.0f};
-            all_squares[square_count][3] = (struct Vertex){0xFF00FF00, (1.0f / 16.0f) + (1.0f / 16.0f) * x, 0.0f + (1.0f / 27.0f) * y, -1.0f};
+            if (table[y][x] == 2)
+            {
+                all_squares[square_count][0] = (struct Vertex){0xFF0000FF, (0.0f) + (1.0f / 7.9f) * x, (0.0f) + (1.0f / 8.0f) * y, -1.0f};
+                all_squares[square_count][1] = (struct Vertex){0xFF0000FF, (0.0f) + (1.0f / 7.9f) * x, (1.0f / 8.0f) + (1.0f / 8.0f) * y, -1.0f};
+                all_squares[square_count][2] = (struct Vertex){0xFF0000FF, (1.0f / 8.0f) + (1.0f / 7.9f) * x, (1.0f / 8.0f) + (1.0f / 8.0f) * y, -1.0f};
+                all_squares[square_count][3] = (struct Vertex){0xFF0000FF, (1.0f / 8.0f) + (1.0f / 7.9f) * x, 0.0f + (1.0f / 8.0f) * y, -1.0f};
+            }
+            else if (table[y][x] == 1)
+            {
+                all_squares[square_count][0] = (struct Vertex){0xFF000000, (0.0f) + (1.0f / 7.9f) * x, (0.0f) + (1.0f / 8.0f) * y, -1.0f};
+                all_squares[square_count][1] = (struct Vertex){0xFF000000, (0.0f) + (1.0f / 7.9f) * x, (1.0f / 8.0f) + (1.0f / 8.0f) * y, -1.0f};
+                all_squares[square_count][2] = (struct Vertex){0xFF000000, (1.0f / 8.0f) + (1.0f / 7.9f) * x, (1.0f / 8.0f) + (1.0f / 8.0f) * y, -1.0f};
+                all_squares[square_count][3] = (struct Vertex){0xFF000000, (1.0f / 8.0f) + (1.0f / 7.9f) * x, 0.0f + (1.0f / 8.0f) * y, -1.0f};
+            }
+            else if (table[y][x] == 3)
+            {
+                all_squares[square_count][0] = (struct Vertex){0xFF00FFFF, (0.0f) + (1.0f / 7.9f) * x, (0.0f) + (1.0f / 8.0f) * y, -1.0f};
+                all_squares[square_count][1] = (struct Vertex){0xFF00FFFF, (0.0f) + (1.0f / 7.9f) * x, (1.0f / 8.0f) + (1.0f / 8.0f) * y, -1.0f};
+                all_squares[square_count][2] = (struct Vertex){0xFF00FFFF, (1.0f / 8.0f) + (1.0f / 7.9f) * x, (1.0f / 8.0f) + (1.0f / 8.0f) * y, -1.0f};
+                all_squares[square_count][3] = (struct Vertex){0xFF00FFFF, (1.0f / 8.0f) + (1.0f / 7.9f) * x, 0.0f + (1.0f / 8.0f) * y, -1.0f};
+            }
+            else if (table[y][x] == 6)
+            {
+                all_squares[square_count][0] = (struct Vertex){0xFFFFFFFF, (0.0f) + (1.0f / 7.9f) * x, (0.0f) + (1.0f / 8.0f) * y, -1.0f};
+                all_squares[square_count][1] = (struct Vertex){0xFFFFFFFF, (0.0f) + (1.0f / 7.9f) * x, (1.0f / 8.0f) + (1.0f / 8.0f) * y, -1.0f};
+                all_squares[square_count][2] = (struct Vertex){0xFFFFFFFF, (1.0f / 8.0f) + (1.0f / 7.9f) * x, (1.0f / 8.0f) + (1.0f / 8.0f) * y, -1.0f};
+                all_squares[square_count][3] = (struct Vertex){0xFFFFFFFF, (1.0f / 8.0f) + (1.0f / 7.9f) * x, 0.0f + (1.0f / 8.0f) * y, -1.0f};
+            }
             square_count++;
         }
     }
